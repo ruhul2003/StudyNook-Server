@@ -1,0 +1,12 @@
+[2026-07-15T08:36:31.841Z] Error: Wrong number of segments in token: David Miller
+    at OAuth2Client.verifySignedJwtWithCertsAsync (D:\Programming hero\NextJS\StudyNook-Server\node_modules\google-auth-library\build\src\auth\oauth2client.js:692:19)
+    at OAuth2Client.verifyIdTokenAsync (D:\Programming hero\NextJS\StudyNook-Server\node_modules\google-auth-library\build\src\auth\oauth2client.js:541:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async D:\Programming hero\NextJS\StudyNook-Server\routes\auth.js:122:20
+
+[2026-07-15T08:36:35.471Z] Error: Wrong number of segments in token: Sophia Brown
+    at OAuth2Client.verifySignedJwtWithCertsAsync (D:\Programming hero\NextJS\StudyNook-Server\node_modules\google-auth-library\build\src\auth\oauth2client.js:692:19)
+    at OAuth2Client.verifyIdTokenAsync (D:\Programming hero\NextJS\StudyNook-Server\node_modules\google-auth-library\build\src\auth\oauth2client.js:541:34)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async D:\Programming hero\NextJS\StudyNook-Server\routes\auth.js:122:20
+

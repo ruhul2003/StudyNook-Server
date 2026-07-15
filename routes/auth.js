@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // JWT Cookie options
 const cookieOptions = {
@@ -12,6 +15,7 @@ const cookieOptions = {
   sameSite: 'strict',
   maxAge: 24 * 60 * 60 * 1000, // 1 day
 };
+
 
 // @route   POST /api/auth/register
 // @desc    Register a new user
@@ -98,14 +102,25 @@ router.post('/login', async (req, res) => {
 });
 
 // @route   POST /api/auth/google
-// @desc    Mock Google Sign-In
+// @desc    Google Sign-In
 // @access  Public
 router.post('/google', async (req, res) => {
   try {
-    const { name, email, photoUrl } = req.body;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Google token is required' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload;
 
     if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+      return res.status(400).json({ message: 'Invalid Google token payload' });
     }
 
     let user = await User.findOne({ email });
@@ -117,17 +132,20 @@ router.post('/google', async (req, res) => {
       user = new User({
         name: name || 'Google User',
         email,
-        photoUrl: photoUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+        photoUrl: picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
         password: hashedPassword,
       });
       await user.save();
+    } else if (picture && user.photoUrl !== picture) {
+      user.photoUrl = picture;
+      await user.save();
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '1d',
     });
 
-    res.cookie('token', token, cookieOptions);
+    res.cookie('token', jwtToken, cookieOptions);
 
     res.json({
       _id: user._id,
@@ -136,8 +154,18 @@ router.post('/google', async (req, res) => {
       photoUrl: user.photoUrl,
     });
   } catch (error) {
-    console.error('Google Sign-In error:', error.message);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Google Sign-In error:', error);
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      fs.appendFileSync(
+        path.join(__dirname, '../error.log'),
+        `[${new Date().toISOString()}] ${error.stack}\n\n`
+      );
+    } catch (e) {
+      console.error('Failed to write to error.log', e);
+    }
+    res.status(500).json({ message: 'Server error: ' + error.message, stack: error.stack });
   }
 });
 
