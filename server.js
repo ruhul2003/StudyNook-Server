@@ -18,7 +18,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Define Routes
-app.use('/api/auth', require('./routes/auth'));
+const { handleAuthRequest } = require('./lib/auth');
+app.use('/api/auth', handleAuthRequest);
 app.use('/api/rooms', require('./routes/rooms'));
 app.use('/api/bookings', require('./routes/bookings'));
 
