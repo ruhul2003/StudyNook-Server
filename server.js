@@ -6,9 +6,6 @@ const connectDB = require('./config/db');
 
 const app = express();
 
-// Connect to Database
-connectDB();
-
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:3000',
@@ -16,6 +13,17 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Connect to DB middleware
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('DB Connection error:', err.message);
+    return res.status(500).json({ message: 'Database connection failed', error: err.message });
+  }
+});
 
 // Define Routes
 const { handleAuthRequest } = require('./lib/auth');
@@ -30,6 +38,11 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+  });
+}
+
+module.exports = app;
+
